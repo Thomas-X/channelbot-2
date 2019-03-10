@@ -1,12 +1,16 @@
-﻿using System;
-
-namespace channelbot_2
+﻿namespace channelbot_2
 {
-    class Program
+    internal class Program
     {
+        
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var hubbub = new PubSubHubBub(); 
+            hubbub.Start();
+
+            while (true)
+            {
+            }
         }
     }
 }
