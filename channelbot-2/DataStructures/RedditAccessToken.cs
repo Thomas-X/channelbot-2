@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace channelbot_2.DataStructures
+﻿namespace channelbot_2.DataStructures
 {
     internal class RedditAccessToken
     {

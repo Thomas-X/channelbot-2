@@ -1,20 +1,20 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
-using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Xml.Linq;
 using channelbot_2.Models;
+using Reddit.Things;
 
 namespace channelbot_2
 {
+    /// <inheritdoc />
     /// <summary>
     /// Handles all pubsubhubbub connection and events
     /// from https://pubsubhubbub.appspot.com
@@ -22,31 +22,73 @@ namespace channelbot_2
     ///     -https://en.wikipedia.org/wiki/WebSub
     ///     -https://developers.google.com/youtube/v3/guides/push_notifications
     /// </summary>
-    public class PubSubHubBub
+    public class PubSubHubBub : IDisposable
     {
+     
+        public static event EventHandler<YoutubeNotification> OnNotificationReceived;
+        
+
         // 1000000 byte = 1mb 
         private int _receivingByteSize = 1000000;
-        private const string subscribe = "subsribe";
+        private const string subscribe = "subscribe";
         private const string unsubscribe = "unsubscribe";
         private const string get = "GET";
         private const string post = "POST";
 
-
         // TODO see https://i.imgur.com/A58fJ8M.png
         // for these methods call info 
+
+        public PubSubHubBub()
+        {
+            Reddit.OnAdd += Subscribe;
+            Reddit.OnRemove += Unsubscribe;
+        }
+
+        public void Dispose()
+        {
+            Reddit.OnAdd -= Subscribe;
+            Reddit.OnRemove -= Unsubscribe;
+        }
 
         /// <summary>
         /// Method that handles making the call to pubsubhubbub that we wish to subscribe to a topic
         /// </summary>
-        public void Subscribe()
+        public void Subscribe(object sender, Message message)
         {
+            var vals = Reddit.GetMessageValues(message.Body, Reddit.RequiredKeysAddPm);
+            if (vals == null) return;
+            var dict = HttpUtility.ParseQueryString(string.Empty);
+            dict.Add("hub.mode", "subscribe");
+            dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
+            dict.Add("hub.callback", $"{Environment.GetEnvironmentVariable("REACHABLE_ADDRESS")}:{Environment.GetEnvironmentVariable("PORT")}");
+            Program.HttpClient.PostAsync("https://pubsubhubbub.appspot.com/subscribe", new ByteArrayContent(
+                        Encoding.ASCII.GetBytes(dict.ToString())
+                    )
+                )
+                .GetAwaiter()
+                .GetResult();
+            Console.WriteLine($"subscribed to {vals["channel_id"]} in /r/{vals["subreddit"]}");
         }
 
         /// <summary>
         /// Method that handles making the call to pubsubhubbub that we wish to unsubscribe from a topic
         /// </summary>
-        public void Unsubscribe()
+        public void Unsubscribe(object sender, Message message)
         {
+            var vals = Reddit.GetMessageValues(message.Body, Reddit.RequiredKeysRemovePm);
+            if (vals == null) return;
+            var dict = HttpUtility.ParseQueryString(string.Empty);
+            dict.Add("hub.mode", "unsubscribe");
+            dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
+            dict.Add("hub.callback", "http://185.47.135.138:3000");
+
+            Program.HttpClient.PostAsync("https://pubsubhubbub.appspot.com/subscribe", new ByteArrayContent(
+                        Encoding.ASCII.GetBytes(dict.ToString())
+                    )
+                )
+                .GetAwaiter()
+                .GetResult();
+            Console.WriteLine($"unsubscribed from {vals["channel_id}"]} in /r/{vals["subreddit"]}");
         }
 
         /// <summary>
@@ -59,6 +101,7 @@ namespace channelbot_2
             // Check if correct content type, if yes, _assume_ it's an update
             // TODO change this to use the HMAC integrity, since this is vulnerable to attacks
             // TODO use HMAC secret for integrity check
+
             var isValidContentType = false;
             foreach (var header in headers)
             {
@@ -74,6 +117,7 @@ namespace channelbot_2
                 return;
             }
 
+            body = body.Replace("\r\n\r\n", "");
             var xml = XDocument.Parse(body);
             var atomNs = xml.Root.Name.Namespace;
             var ytNs = "{http://www.youtube.com/xml/schemas/2015}";
@@ -88,32 +132,48 @@ namespace channelbot_2
                     // we should ignore it).
                     var videoId = descendant.Descendants(ytNs + "videoId").ToArray()[0].Value;
                     var exists = db.YoutubeNotifications.Where(x => x.VideoId == videoId).ToList().Count > 0;
-                    if (!exists)
+                    // Check if notification was made within the hour. (if it's just been uploaded the published time is within the hour, unless pubsubhubbub is really slow)
+                    var dateToCheck =
+                        DateTime.Parse(xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")));
+                    var withinTheHour = dateToCheck > DateTime.Now.Subtract(new TimeSpan(1, 0, 0)) &&
+                                        dateToCheck < DateTime.Now.AddHours(1);
+
+                    if (exists) return;
+                    if (!withinTheHour) return;
+                    // add it to DB
+                    var author = descendant.Descendants(atomNs + "author");
+                    var xAuthor = author.ToList();
+                    // TODO enable within the hour check
+                    // Get all channels/subreddit combos with the channel
+                    // Since there could be many subreddits for one channel
+                    foreach (var channel in db.Channels)
                     {
-                        // add it to DB
-                        var author = descendant.Descendants(atomNs + "author");
-                        var xAuthor = author.ToList();
+                        if (channel.YoutubeChannelId !=
+                            xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId"))) return;
+
+                        var yt = new YoutubeNotification
+                        {
+                            AuthorLink = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "uri")),
+                            AuthorName = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "name")),
+                            YoutubeChannelId =
+                                xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId")),
+                            VideoId = videoId,
+                            Link = descendant.Descendants(atomNs + "link").Attributes("href").ToArray()[0]
+                                .Value,
+                            PublishedDate =
+                                xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")),
+                            Title = xmlDescandantValueGetter(descendant.Descendants(atomNs + "title")),
+                            UpdatedDate = xmlDescandantValueGetter(descendant.Descendants(atomNs + "updated")),
+                            PostedToReddit = false,
+                            Channel = channel
+                        };
+
                         db.YoutubeNotifications.Add(
-                            new YoutubeNotification
-                            {
-                                AuthorLink = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "uri")),
-                                AuthorName = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "name")),
-                                ChannelId = xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId")),
-                                VideoId = videoId,
-                                Link = descendant.Descendants(atomNs + "link").Attributes("href").ToArray()[0].Value,
-                                PublishedDate = xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")),
-                                Title = xmlDescandantValueGetter(descendant.Descendants(atomNs + "title")),
-                                UpdatedDate = xmlDescandantValueGetter(descendant.Descendants(atomNs + "updated")),
-                                PostedToReddit = false
-                            }
+                           yt
                         );
-                        db.SaveChanges();
+                        OnNotificationReceived?.Invoke(this, yt);
                     }
-                    else
-                    {
-                        // ignore item
-                        return;
-                    }
+                    db.SaveChanges();
                 }
             }
         }
@@ -200,8 +260,6 @@ namespace channelbot_2
                     var queryString = headers[0].Split(" ")[1];
                     var type = headers[0].Split(" ")[0];
                     var query = HttpUtility.ParseQueryString(queryString);
-
-                    Console.WriteLine("Received: {0}", data);
 
                     // On subscribe verification
                     if (query["hub.challenge"] != null

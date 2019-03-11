@@ -7,6 +7,7 @@ using System.Web;
 using channelbot_2.DataStructures;
 using channelbot_2.Models;
 using Newtonsoft.Json;
+using Reddit;
 
 namespace channelbot_2
 {
@@ -14,7 +15,6 @@ namespace channelbot_2
     {
         public static string CurrentToken;
         public Timer TokenTimer = new Timer();
-        private static HttpClient _httpClient = new HttpClient();
 
         /// <summary>
         /// Refresh the reddit token
@@ -38,6 +38,8 @@ namespace channelbot_2
                 );
                 // Get new token and insert into DB
                 db.SaveChanges();
+                // Update reddit api instance
+                Reddit.Api = new RedditAPI(accessToken:CurrentToken);
             }
         }
 
@@ -47,16 +49,16 @@ namespace channelbot_2
                 new HttpRequestMessage(HttpMethod.Post, "https://www.reddit.com/api/v1/access_token"))
             {
                 var formData = HttpUtility.ParseQueryString(string.Empty);
-                formData.Add("username", "Dispose_Close");
-                formData.Add("password", "pBYgjW1sRiHeasrIubNp");
+                formData.Add("username", Environment.GetEnvironmentVariable("REDDIT_ACCOUNT_USERNAME"));
+                formData.Add("password", Environment.GetEnvironmentVariable("REDDIT_ACCOUNT_PASSWORD"));
                 formData.Add("grant_type", "password");
                 var botCredentials =
                     Convert.ToBase64String(
-                        Encoding.ASCII.GetBytes("yiGVqKirTIzBFw:0VuS0U0-wYFsUYfpmF00NzwtRnM"));
+                        Encoding.ASCII.GetBytes($"{Environment.GetEnvironmentVariable("REDDIT_BOT_ID")}:{Environment.GetEnvironmentVariable("REDDIT_BOT_SECRET")}"));
                 var data = Encoding.ASCII.GetBytes(formData.ToString());
                 requestMessage.Headers.Add("Authorization", "Basic " + botCredentials);
                 requestMessage.Content = new ByteArrayContent(data);
-                var response = _httpClient.SendAsync(requestMessage)
+                var response = Program.HttpClient.SendAsync(requestMessage)
                     .GetAwaiter()
                     .GetResult();
                 var redditAccessToken =

@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Net.Mime;
-using System.Security.Cryptography;
-using System.Text;
+using System.Net.Http;
 using System.Threading;
+using dotenv.net;
 using Reddit;
 
 namespace channelbot_2
@@ -19,12 +17,15 @@ namespace channelbot_2
      */
     internal class Program
     {
-        public static ManualResetEvent _quitEvent = new ManualResetEvent(false);
+        public static ManualResetEvent QuitEvent = new ManualResetEvent(false);
+        public static HttpClient HttpClient = new HttpClient();
 
         private static void Main(string[] args)
         {
+            Console.WriteLine("\r\n #####                                                                    #####  \r\n#     # #    #   ##   #    # #    # ###### #      #####   ####  #####    #     # \r\n#       #    #  #  #  ##   # ##   # #      #      #    # #    #   #            # \r\n#       ###### #    # # #  # # #  # #####  #      #####  #    #   #       #####  \r\n#       #    # ###### #  # # #  # # #      #      #    # #    #   #      #       \r\n#     # #    # #    # #   ## #   ## #      #      #    # #    #   #      #       \r\n #####  #    # #    # #    # #    # ###### ###### #####   ####    #      ####### \r\n");
+            DotEnv.Config();
             Console.CancelKeyPress += (sender, eArgs) => {
-                _quitEvent.Set();
+                QuitEvent.Set();
                 eArgs.Cancel = true;
             };
             
@@ -34,20 +35,21 @@ namespace channelbot_2
 
             // Setup Reddit Client
             var redditAPI = new RedditAPI(accessToken:RedditTokenManager.CurrentToken);
-            var reddit = new Reddit(redditAPI);
-            reddit.MonitorUnreadPMs();
-            
-            // TODO remove this
-            //Start polling
-//            var pollManager = new PollManager();
-//            pollManager.Start();
+            using (var reddit = new Reddit(redditAPI))
+            {
+                reddit.MonitorUnreadPMs();
 
-            // Start pubsubhubbub
-            var hubbub = new PubSubHubBub(); 
-            hubbub.Start();
+                //Start polling
+                var pollManager = new PollManager();
+                pollManager.Start();
 
-            // TODO Unmonitor reddit
-            _quitEvent.WaitOne();
+                // Start pubsubhubbub, call dispose on it to remove listeners from event
+                using (var hubbub = new PubSubHubBub())
+                {
+                    hubbub.Start();
+                    QuitEvent.WaitOne();
+                }
+            } 
         }
     }
 }

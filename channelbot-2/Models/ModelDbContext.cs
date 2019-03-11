@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 
 namespace channelbot_2.Models
@@ -13,6 +11,7 @@ namespace channelbot_2.Models
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            DotEnv.Config();
             optionsBuilder.UseMySql(@"server=localhost;database=channelbot_2;user=root");
         }
     }
