@@ -11,13 +11,12 @@ namespace channelbot_2
     {
         // Post messages every 2m, check for it (incase the reddit request failed from the events)
         public int PollInterval { get; set; } = 120000;
-        
+
         /// <summary>
         /// On setup
         /// </summary>
         public void OnSetup()
         {
-            Console.WriteLine("On setup!");
         }
 
         /// <summary>
@@ -33,14 +32,13 @@ namespace channelbot_2
                 {
                     foreach (var yt in db.YoutubeNotifications.Where(x => x.PostedToReddit == false))
                     {
-                        reddit.PostInSubreddit(new {}, yt);
-                        // Wait one sec between requests (should be internally managed by Reddit.NET)
+                        reddit.PostInSubreddit(new { }, yt);
+                        // Wait one sec between requests (should be internally managed by Reddit.NET, library says so but we ran into rate limiting issues so here we are)
                         Thread.Sleep(1000);
-                        Console.WriteLine("Backup reddit posting!");
+//                        Console.WriteLine("Backup reddit posting!");
                     }
                 }
             }
         }
-        
     }
 }

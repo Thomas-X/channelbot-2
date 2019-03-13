@@ -260,7 +260,7 @@ namespace channelbot_2
                     var queryString = headers[0].Split(" ")[1];
                     var type = headers[0].Split(" ")[0];
                     var query = HttpUtility.ParseQueryString(queryString);
-
+                    Console.WriteLine($"Received data from pubsubhubbub, url is: \r\n{headers[0]}");
                     // On subscribe verification
                     if (query["hub.challenge"] != null
                         && query["hub.mode"] == subscribe

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Net.Http;
 using System.Threading;
 using dotenv.net;
@@ -24,39 +25,47 @@ namespace channelbot_2
 
         private static void Main(string[] args)
         {
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("\r\n #####                                                                    #####  \r\n#     # #    #   ##   #    # #    # ###### #      #####   ####  #####    #     # \r\n#       #    #  #  #  ##   # ##   # #      #      #    # #    #   #            # \r\n#       ###### #    # # #  # # #  # #####  #      #####  #    #   #       #####  \r\n#       #    # ###### #  # # #  # # #      #      #    # #    #   #      #       \r\n#     # #    # #    # #   ## #   ## #      #      #    # #    #   #      #       \r\n #####  #    # #    # #    # #    # ###### ###### #####   ####    #      ####### \r\n");
             DotEnv.Config();
             Console.CancelKeyPress += (sender, eArgs) => {
                 QuitEvent.Set();
                 eArgs.Cancel = true;
             };
+            Console.ForegroundColor = ConsoleColor.White;
 
-            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_BOT_ID"));
-            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_BOT_SECRET"));
-            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_ACCOUNT_USERNAME"));
-            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_ACCOUNT_PASSWORD"));
-            Console.WriteLine(Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING"));
-
+            // Rainbows!!
+            Console.ForegroundColor = ConsoleColor.Cyan;
             // Setup RedditToken for use in polling etc.
             var redditTokenManager = new RedditTokenManager();
             redditTokenManager.Start();
+            Console.WriteLine("Initialized reddit token manager..");
 
             // Setup Reddit Client
             var redditAPI = new RedditAPI(accessToken:RedditTokenManager.CurrentToken);
             using (var reddit = new Reddit(redditAPI))
             {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("Initialized reddit logic..");
                 reddit.MonitorUnreadPMs();
-//
-//                //Start polling
-//                var pollManager = new PollManager();
-//                pollManager.Start();
-//
-//                // Start pubsubhubbub, call dispose on it to remove listeners from event
-//                using (var hubbub = new PubSubHubBub())
-//                {
-//                    hubbub.Start();
-//                    QuitEvent.WaitOne();
-//                }
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.WriteLine("Monitoring reddit PMs every 30sec..");
+
+                //Start polling
+                var pollManager = new PollManager();
+                pollManager.Start();
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Initialized backup poller for sending out posts to subreddits");
+
+                // Start pubsubhubbub, call dispose on it to remove listeners from event
+                using (var hubbub = new PubSubHubBub())
+                {
+                    hubbub.Start();
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("Setup pubsubhubbub TCP listener..");
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    QuitEvent.WaitOne();
+                }
             } 
         }
     }
