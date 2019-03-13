@@ -1,4 +1,6 @@
-﻿namespace channelbot_2_jsonconvert.DataStructures
+﻿using System.Collections.Generic;
+
+namespace channelbot_2_jsonconvert.DataStructures
 {
     public class ChannelJson
     {
@@ -8,7 +10,7 @@
         public string user { get; set; }
         public int register_date { get; set; }
         public string upload_playlist { get; set; }
-        public string[] last_videos { get; set; }
+        public List<string> last_videos { get; set; }
         public int last_check { get; set; }
     }
 }

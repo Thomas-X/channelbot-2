@@ -38,9 +38,8 @@ namespace channelbot_2
                 );
                 // Get new token and insert into DB
                 db.SaveChanges();
-                // Update reddit api instance
-                Reddit.Api = new RedditAPI(accessToken:CurrentToken);
             }
+            Console.WriteLine("refreshed the token, aka just go a new token and updated the one in the db");
         }
 
         public RedditToken GetNewToken()
@@ -70,6 +69,9 @@ namespace channelbot_2
                     ExpirationDate = DateTime.Now.AddMinutes(60),
                     Token = redditAccessToken.access_token,
                 };
+
+                // Update reddit api instance
+                Reddit.Api = new RedditAPI(accessToken: token.Token);
                 return token;
             }
         }
@@ -89,18 +91,28 @@ namespace channelbot_2
                     CurrentToken = existingTokens[0].Token;
                     // Setup timer for getting new token (in case the program shut down before the token expired, would be a waste not to re-use)
                     var diff = existingTokens[0].ExpirationDate - DateTime.Now;
+                    Console.WriteLine("Total timer time");
+                    Console.WriteLine(diff.TotalMilliseconds * 0.80);
+                    // TODO DRY
                     TokenTimer.Interval =
-                        diff.TotalMilliseconds * 0.90; // use 90% of the remaining time for good measure
+                        diff.TotalMilliseconds * 0.80; // use 80% of the remaining time for good measure
                     TokenTimer.Elapsed += (source, e) => OnRefreshToken(existingTokens[0]);
                     TokenTimer.Start();
                 }
                 else
                 {
+                    Console.WriteLine("getting new token from reddit");
                     // Request a new token from reddit, meaning NONE exist and we should just add a new one to the DB
                     var redditToken = GetNewToken();
                     CurrentToken = redditToken.Token;
                     db.RedditTokens.Add(redditToken);
                     db.SaveChanges();
+
+                    // Start timer 
+                    TokenTimer.Interval = (redditToken.ExpirationDate - DateTime.Now).TotalMilliseconds * 0.80;
+                    TokenTimer.Elapsed += (source, e) => OnRefreshToken(redditToken);
+                    TokenTimer.Start();
+                    Console.WriteLine($"Setup new token! {TokenTimer.Interval}ms");
                 }
             }
         }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using dotenv.net;
@@ -28,7 +30,13 @@ namespace channelbot_2
                 QuitEvent.Set();
                 eArgs.Cancel = true;
             };
-            
+
+            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_BOT_ID"));
+            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_BOT_SECRET"));
+            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_ACCOUNT_USERNAME"));
+            Console.WriteLine(Environment.GetEnvironmentVariable("REDDIT_ACCOUNT_PASSWORD"));
+            Console.WriteLine(Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING"));
+
             // Setup RedditToken for use in polling etc.
             var redditTokenManager = new RedditTokenManager();
             redditTokenManager.Start();
@@ -38,17 +46,17 @@ namespace channelbot_2
             using (var reddit = new Reddit(redditAPI))
             {
                 reddit.MonitorUnreadPMs();
-
-                //Start polling
-                var pollManager = new PollManager();
-                pollManager.Start();
-
-                // Start pubsubhubbub, call dispose on it to remove listeners from event
-                using (var hubbub = new PubSubHubBub())
-                {
-                    hubbub.Start();
-                    QuitEvent.WaitOne();
-                }
+//
+//                //Start polling
+//                var pollManager = new PollManager();
+//                pollManager.Start();
+//
+//                // Start pubsubhubbub, call dispose on it to remove listeners from event
+//                using (var hubbub = new PubSubHubBub())
+//                {
+//                    hubbub.Start();
+//                    QuitEvent.WaitOne();
+//                }
             } 
         }
     }

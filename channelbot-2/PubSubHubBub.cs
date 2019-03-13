@@ -60,7 +60,7 @@ namespace channelbot_2
             var dict = HttpUtility.ParseQueryString(string.Empty);
             dict.Add("hub.mode", "subscribe");
             dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
-            dict.Add("hub.callback", $"{Environment.GetEnvironmentVariable("REACHABLE_ADDRESS")}:{Environment.GetEnvironmentVariable("PORT")}");
+            dict.Add("hub.callback", $"{Environment.GetEnvironmentVariable("REACHABLE_ADDRESS")}");
             Program.HttpClient.PostAsync("https://pubsubhubbub.appspot.com/subscribe", new ByteArrayContent(
                         Encoding.ASCII.GetBytes(dict.ToString())
                     )
@@ -80,7 +80,7 @@ namespace channelbot_2
             var dict = HttpUtility.ParseQueryString(string.Empty);
             dict.Add("hub.mode", "unsubscribe");
             dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
-            dict.Add("hub.callback", "http://185.47.135.138:3000");
+            dict.Add("hub.callback", Environment.GetEnvironmentVariable("REACHABLE_ADDRESS"));
 
             Program.HttpClient.PostAsync("https://pubsubhubbub.appspot.com/subscribe", new ByteArrayContent(
                         Encoding.ASCII.GetBytes(dict.ToString())
@@ -247,7 +247,7 @@ namespace channelbot_2
         private void HandleRequest(TcpClient client)
         {
             var stream = client.GetStream();
-            var x = 0;
+            int x;
             var buffer = new byte[_receivingByteSize];
             while ((x = stream.Read(buffer, 0, buffer.Length)) != 0)
             {
@@ -304,9 +304,10 @@ namespace channelbot_2
         public void Start()
         {
             // Start listening on the TCP socket
-            var port = 3000;
+            var port = Environment.GetEnvironmentVariable("PORT");
+            if (!int.TryParse(port, out var parsedPort)) return;
             var localAddr = IPAddress.Any;
-            var server = new TcpListener(localAddr, port);
+            var server = new TcpListener(localAddr, parsedPort);
 
             // Accept incoming requests
             server.Start();
