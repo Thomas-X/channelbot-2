@@ -10,6 +10,7 @@ namespace channelbot_2_jsonconvert
     {
         static void Main(string[] args)
         {
+            // TODO store subscriptions for renewal from pubsubhubbub (important)
             // TODO Handle invalid PMs better than just plain ignoring it
             // TODO [DONE] Step 0: Investigate issue with reddit token expiring
             // TODO Step 1: Setup channelbot on server
