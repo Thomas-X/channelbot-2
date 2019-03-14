@@ -104,7 +104,7 @@ namespace channelbot_2
                 var isValid = Api.Subreddit(vals["subreddit"])
                                   .Moderators
                                   .Where(x => x.Name == message.Author &&
-                                              x.ModPermissions.First(y => y == "all") != null)
+                                              x.ModPermissions.FirstOrDefault(y => y == "all") != null)
                                   .ToList().Count == 1;
                 if (!isValid) return;
                 var exists = db.Channels.FirstOrDefault(x =>
@@ -134,7 +134,7 @@ namespace channelbot_2
                 }
                 var isValid = Api.Subreddit(vals["subreddit"])
                                   .Moderators
-                                  .First(x => x.Name == message.Author) != null;
+                                  .FirstOrDefault(x => x.Name == message.Author) != null;
                 if (!isValid) return;
                 var channelSubscription =
                     db.Channels

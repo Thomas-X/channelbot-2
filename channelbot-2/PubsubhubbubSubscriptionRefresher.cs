@@ -39,7 +39,7 @@ namespace channelbot_2
                     }
                 }
 
-                //                var sub = db.PubsubhubbubSubscriptions.First(x => x.Topic == query["hub.topic"]);
+                //                var sub = db.PubsubhubbubSubscriptions.FirstOrDefault(x => x.Topic == query["hub.topic"]);
                 //                if (sub == null)
                 //                {
                 //                    db.PubsubhubbubSubscriptions.Add(

@@ -318,7 +318,7 @@ namespace channelbot_2
         {
             using (var db = new ModelDbContext())
             {
-                var val = db.PubsubhubbubSubscriptions.First(x => x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
+                var val = db.PubsubhubbubSubscriptions.FirstOrDefault(x => x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
                 if (val == null) return;
                 db.PubsubhubbubSubscriptions.Remove(val);
             }
@@ -332,7 +332,7 @@ namespace channelbot_2
         {
             using (var db = new ModelDbContext())
             {
-                var sub = db.PubsubhubbubSubscriptions.First(x =>
+                var sub = db.PubsubhubbubSubscriptions.FirstOrDefault(x =>
                     x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
                 var obj = new PubsubhubbubSubscription()
                 {
