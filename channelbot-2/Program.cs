@@ -62,7 +62,7 @@ namespace channelbot_2
                 {
                     hubbub.Start();
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Setup pubsubhubbub TCP listener..");
+                    Console.WriteLine("[SUPERDEBUG] Setup pubsubhubbub TCP listener..\r\n");
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     QuitEvent.WaitOne();
                 }

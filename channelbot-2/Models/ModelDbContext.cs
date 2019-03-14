@@ -9,6 +9,7 @@ namespace channelbot_2.Models
         public DbSet<YoutubeNotification> YoutubeNotifications { get; set; }
         public DbSet<RedditToken> RedditTokens { get; set; }
         public DbSet<Channel> Channels { get; set; }
+        public DbSet<PubsubhubbubSubscription> PubsubhubbubSubscriptions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

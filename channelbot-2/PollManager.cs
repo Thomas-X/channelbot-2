@@ -9,7 +9,8 @@ namespace channelbot_2
     {
         public List<Type> pollers = new List<Type>()
         {
-            typeof(RedditPostMaker)
+            typeof(RedditPostMaker),
+            typeof(PubsubhubbubSubscriptionRefresher)
         };
 
         public List<Timer> timers = new List<Timer>();

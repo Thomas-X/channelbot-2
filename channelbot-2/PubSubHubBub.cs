@@ -24,10 +24,8 @@ namespace channelbot_2
     /// </summary>
     public class PubSubHubBub : IDisposable
     {
-     
         public static event EventHandler<YoutubeNotification> OnNotificationReceived;
         
-
         // 1000000 byte = 1mb 
         private int _receivingByteSize = 1000000;
         private const string subscribe = "subscribe";
@@ -56,7 +54,11 @@ namespace channelbot_2
         public void Subscribe(object sender, Message message)
         {
             var vals = Reddit.GetMessageValues(message.Body, Reddit.RequiredKeysAddPm);
-            if (vals == null) return;
+            if (vals == null)
+            {
+                ChannelNameNotSupportedMessage(message.Author);
+                return;
+            };
             var dict = HttpUtility.ParseQueryString(string.Empty);
             dict.Add("hub.mode", "subscribe");
             dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
@@ -67,7 +69,14 @@ namespace channelbot_2
                 )
                 .GetAwaiter()
                 .GetResult();
+
+            OnSubscriptionAdd(vals);
             Console.WriteLine($"subscribed to {vals["channel_id"]} in /r/{vals["subreddit"]}");
+        }
+
+        public static void ChannelNameNotSupportedMessage(string author)
+        {
+            Reddit.Api.Account.Messages.Compose(author, $"error adding your channel", "I'm sorry, but I couldn't parse the message. Did you use the channel field? If so, that's not supported anymore, use the channel_id field instead.");
         }
 
         /// <summary>
@@ -76,7 +85,11 @@ namespace channelbot_2
         public void Unsubscribe(object sender, Message message)
         {
             var vals = Reddit.GetMessageValues(message.Body, Reddit.RequiredKeysRemovePm);
-            if (vals == null) return;
+            if (vals == null)
+            {
+                ChannelNameNotSupportedMessage(message.Author);
+                return;
+            };
             var dict = HttpUtility.ParseQueryString(string.Empty);
             dict.Add("hub.mode", "unsubscribe");
             dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
@@ -88,6 +101,8 @@ namespace channelbot_2
                 )
                 .GetAwaiter()
                 .GetResult();
+
+            OnSubscriptionRemove(vals);
             Console.WriteLine($"unsubscribed from {vals["channel_id}"]} in /r/{vals["subreddit"]}");
         }
 
@@ -213,6 +228,7 @@ namespace channelbot_2
             stream.Write(Encoding.UTF8.GetBytes(content));
         }
 
+
         /// <summary>
         /// When the request is given from pubsubhubbub to unsubscribe
         /// </summary>
@@ -296,6 +312,46 @@ namespace channelbot_2
             stream.Dispose();
             client.Close();
             client.Dispose();
+        }
+
+        public void OnSubscriptionRemove(Dictionary<string, string> vals)
+        {
+            using (var db = new ModelDbContext())
+            {
+                var val = db.PubsubhubbubSubscriptions.First(x => x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
+                if (val == null) return;
+                db.PubsubhubbubSubscriptions.Remove(val);
+            }
+        }
+
+        /// <summary>
+        /// Checks if a subscription already exists, if yes, overwrite it, otherwise add it
+        /// </summary>
+        /// <param name="vals"></param>
+        public void OnSubscriptionAdd(Dictionary<string, string> vals)
+        {
+            using (var db = new ModelDbContext())
+            {
+                var sub = db.PubsubhubbubSubscriptions.First(x =>
+                    x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
+                var obj = new PubsubhubbubSubscription()
+                {
+                    ChannelId = vals["channel_id"],
+                    CreationDate = DateTime.Now,
+                    ExpirationDate = DateTime.Now.AddDays(4.5),
+                    Subreddit = vals["subreddit"]
+                };
+                if (sub != null)
+                {
+                    sub.ExpirationDate = obj.ExpirationDate;
+                    sub.ChannelId = obj.ChannelId;
+                    sub.Subreddit = obj.Subreddit;
+                    db.PubsubhubbubSubscriptions.Update(sub);
+                }
+                db.PubsubhubbubSubscriptions.Add(
+                    obj
+                );
+            }
         }
 
         /// <summary>

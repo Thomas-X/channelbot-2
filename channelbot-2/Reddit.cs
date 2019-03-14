@@ -70,19 +70,24 @@ namespace channelbot_2
         public void HandleListPm(Message message)
         {
             var values = GetMessageValues(message.Body, RequiredKeysListPm);
+            if (values == null)
+            {
+                PubSubHubBub.ChannelNameNotSupportedMessage(message.Author);
+                return;
+            }
             using (var db = new ModelDbContext())
             {
                 var channels = db.Channels.Where(x => x.Subreddit == values["subreddit"]).ToList();
                 if (values == null || channels.Count <= 0) return;
                 var sb = new StringBuilder();
                 sb.AppendLine(
-                    $"Below are the channels using ChannelBot2 on the specified subreddit of: {values["subreddit"]}");
+                    $"Below are the channels using ChannelBot2 on the specified subreddit of: {values["subreddit"]}\r\n");
                 foreach (var channel in channels)
                 {
-                    sb.AppendLine($"ChannelID: {channel.YoutubeChannelId}");
+                    sb.AppendLine($"ChannelID: {channel.YoutubeChannelId}\r\n");
                 }
 
-                Api.Account.Messages.Compose(message.Author, $"Listing of {values["subreddit"]}", sb.ToString());
+                Api.Account.Messages.Compose(message.Author, $"Listing of {values["subreddit"]}\r\n", sb.ToString());
             }
         }
 
@@ -91,7 +96,11 @@ namespace channelbot_2
             using (var db = new ModelDbContext())
             {
                 var vals = GetMessageValues(message.Body, RequiredKeysAddPm);
-                if (vals == null) return;
+                if (vals == null)
+                {
+                    PubSubHubBub.ChannelNameNotSupportedMessage(message.Author);
+                    return;
+                }
                 var isValid = Api.Subreddit(vals["subreddit"])
                                   .Moderators
                                   .Where(x => x.Name == message.Author &&
@@ -118,7 +127,11 @@ namespace channelbot_2
             using (var db = new ModelDbContext())
             {
                 var vals = GetMessageValues(message.Body, RequiredKeysRemovePm);
-                if (vals == null) return;
+                if (vals == null)
+                {
+                    PubSubHubBub.ChannelNameNotSupportedMessage(message.Author);
+                    return;
+                }
                 var isValid = Api.Subreddit(vals["subreddit"])
                                   .Moderators
                                   .First(x => x.Name == message.Author) != null;
@@ -147,12 +160,17 @@ namespace channelbot_2
                 {
                     case "add":
                         HandleAddPm(message);
+                        Api.Account.Messages.Compose(message.Author, "success", "successfully added your channel to the bot");
                         break;
                     case "remove":
                         HandleRemovePm(message);
+                        Api.Account.Messages.Compose(message.Author, "success", "successfully removed your channel from the bot");
                         break;
                     case "list":
                         HandleListPm(message);
+                        break;
+                    default:
+                        Api.Account.Messages.Compose(message.Author, "error", "invalid PM title");
                         break;
                 }
 

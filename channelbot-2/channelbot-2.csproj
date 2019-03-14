@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Compile Remove="Migrations\20190310232957_Add_Channel.cs" />
+    <Compile Remove="Migrations\20190314103558_Add_PubsubhubbubSubscription.cs" />
   </ItemGroup>
 
   <ItemGroup>
