@@ -25,6 +25,7 @@ namespace channelbot_2
 
         private static void Main(string[] args)
         {
+            Console.Clear();
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("\r\n #####                                                                    #####  \r\n#     # #    #   ##   #    # #    # ###### #      #####   ####  #####    #     # \r\n#       #    #  #  #  ##   # ##   # #      #      #    # #    #   #            # \r\n#       ###### #    # # #  # # #  # #####  #      #####  #    #   #       #####  \r\n#       #    # ###### #  # # #  # # #      #      #    # #    #   #      #       \r\n#     # #    # #    # #   ## #   ## #      #      #    # #    #   #      #       \r\n #####  #    # #    # #    # #    # ###### ###### #####   ####    #      ####### \r\n");
             DotEnv.Config();

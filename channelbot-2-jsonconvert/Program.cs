@@ -21,7 +21,7 @@ namespace channelbot_2_jsonconvert
             // TODO HMAC for pubsubhubbub
             var channels = JsonConvert.DeserializeObject<List<ChannelJson>>(File.ReadAllText("channels.json"));
             Console.WriteLine("Hello World!");
-            var reddit = new RedditAPI(accessToken: "48589035-8Rj5imtYl9gebgypOIech-6smq8");
+            var reddit = new RedditAPI(accessToken: "ACCESS_TOKEN_HERE");
             var i = 0;
             foreach (var channel in channels)
             {

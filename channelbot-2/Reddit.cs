@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Web;
+using channelbot_2.DataStructures;
 using channelbot_2.Models;
+using Newtonsoft.Json;
 using Reddit;
 using Reddit.Controllers.EventArgs;
 using Reddit.Things;
@@ -45,22 +48,48 @@ namespace channelbot_2
             }
         }
 
+        /// <summary>
+        /// Gets values from a set of body strings
+        /// </summary>
+        /// <param name="body"></param>
+        /// <param name="requiredKeys"></param>
+        /// <returns></returns>
         public static Dictionary<string, string> GetMessageValues(string body, string[] requiredKeys)
         {
             var dict = new Dictionary<string, string>();
             var vals = body.Split("\n");
+            var skipIter = false;
             foreach (var val in vals)
             {
                 var splitted = val.Split(":");
                 KeyValuePair<string, string> keyValue = new KeyValuePair<string, string>(splitted[0], splitted[1]);
-                if (requiredKeys.Any(keyValue.Key.Contains) && keyValue.Value.Length > 0)
+
+                // so if we converted the channel field to channel_id.. realllllyyyyy uglyy
+                if (skipIter && dict["channel_id"] != null && keyValue.Key == "channel")
+                {
+                    continue;
+                }
+
+                if (keyValue.Key == "channel" && keyValue.Value.Length > 0)
+                {
+                    Console.WriteLine("Converting channel to channel_id..");
+                    var res = JsonConvert.DeserializeObject<YoutubChannelNameLookUpResponse>(
+                        Program.HttpClient.GetStringAsync(
+                                $"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=channel&q={HttpUtility.UrlEncode(keyValue.Value.Trim())}&key={Environment.GetEnvironmentVariable("YOUTUBE_API_KEY")}")
+                            .GetAwaiter().GetResult());
+                    if (res.Items.Count <= 0) continue;
+                    dict["channel_id"] = res.Items[0].Id.ChannelId;
+                    skipIter = true;
+                }
+                else if (requiredKeys.Any(keyValue.Key.Contains) && keyValue.Value.Length > 0)
                 {
                     dict[requiredKeys.First(x => x == keyValue.Key).Trim()] = keyValue.Value.Trim();
                 }
                 // If anything of the request is invalid, ignore it and read as marked
                 else
                 {
-                    return null;
+                    Console.WriteLine("Gotten an invalid msg");
+                    // continue;
                 }
             }
 
@@ -75,6 +104,7 @@ namespace channelbot_2
                 PubSubHubBub.ChannelNameNotSupportedMessage(message.Author);
                 return;
             }
+
             using (var db = new ModelDbContext())
             {
                 var channels = db.Channels.Where(x => x.Subreddit == values["subreddit"]).ToList();
@@ -101,14 +131,13 @@ namespace channelbot_2
                     PubSubHubBub.ChannelNameNotSupportedMessage(message.Author);
                     return;
                 }
-                // TODO uncomment
-                // disable mod check for seeding DB
-//                var isValid = Api.Subreddit(vals["subreddit"])
-//                                  .Moderators
-//                                  .Where(x => x.Name == message.Author &&
-//                                              x.ModPermissions.FirstOrDefault(y => y == "all") != null)
-//                                  .ToList().Count == 1;
-//                if (!isValid) return;
+
+                var isValid = Api.Subreddit(vals["subreddit"])
+                                  .Moderators
+                                  .Where(x => x.Name == message.Author &&
+                                              x.ModPermissions.FirstOrDefault(y => y == "all") != null)
+                                  .ToList().Count == 1;
+                if (!isValid) return;
                 var exists = db.Channels.FirstOrDefault(x =>
                                  x.YoutubeChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]) != null;
                 if (exists) return;
@@ -134,6 +163,7 @@ namespace channelbot_2
                     PubSubHubBub.ChannelNameNotSupportedMessage(message.Author);
                     return;
                 }
+
                 var isValid = Api.Subreddit(vals["subreddit"])
                                   .Moderators
                                   .FirstOrDefault(x => x.Name == message.Author) != null;
