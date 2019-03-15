@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Xml.Linq;
 using channelbot_2.Models;
+using Microsoft.EntityFrameworkCore;
 using Reddit.Things;
 
 namespace channelbot_2
@@ -25,7 +26,7 @@ namespace channelbot_2
     public class PubSubHubBub : IDisposable
     {
         public static event EventHandler<YoutubeNotification> OnNotificationReceived;
-        
+
         // 1000000 byte = 1mb 
         private int _receivingByteSize = 1000000;
         private const string subscribe = "subscribe";
@@ -58,7 +59,9 @@ namespace channelbot_2
             {
                 ChannelNameNotSupportedMessage(message.Author);
                 return;
-            };
+            }
+
+            ;
             var dict = HttpUtility.ParseQueryString(string.Empty);
             dict.Add("hub.mode", "subscribe");
             dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
@@ -76,7 +79,8 @@ namespace channelbot_2
 
         public static void ChannelNameNotSupportedMessage(string author)
         {
-            Reddit.Api.Account.Messages.Compose(author, $"error adding your channel", "I'm sorry, but I couldn't parse the message. Did you use the channel field? If so, that's not supported anymore, use the channel_id field instead.");
+            Reddit.Api.Account.Messages.Compose(author, $"error adding your channel",
+                "I'm sorry, but I couldn't parse the message. Did you use the channel field? If so, that's not supported anymore, use the channel_id field instead.");
         }
 
         /// <summary>
@@ -89,7 +93,9 @@ namespace channelbot_2
             {
                 ChannelNameNotSupportedMessage(message.Author);
                 return;
-            };
+            }
+
+            ;
             var dict = HttpUtility.ParseQueryString(string.Empty);
             dict.Add("hub.mode", "unsubscribe");
             dict.Add("hub.topic", $"https://www.youtube.com/xml/feeds/videos.xml?channel_id={vals["channel_id"]}");
@@ -137,7 +143,6 @@ namespace channelbot_2
             var atomNs = xml.Root.Name.Namespace;
             var ytNs = "{http://www.youtube.com/xml/schemas/2015}";
             // Free memory of db inst after context
-            using (var db = new ModelDbContext())
             {
                 // Read all entries, adding each into the DB
                 foreach (var descendant in xml.Descendants(atomNs + "entry"))
@@ -146,7 +151,12 @@ namespace channelbot_2
                     // Check if notification of that video already exists (this means it was updated instead of created and
                     // we should ignore it).
                     var videoId = descendant.Descendants(ytNs + "videoId").ToArray()[0].Value;
-                    var exists = db.YoutubeNotifications.Where(x => x.VideoId == videoId).ToList().Count > 0;
+                    bool exists;
+                    using (var db = new ModelDbContext())
+                    {
+                        exists = db.YoutubeNotifications.Where(x => x.VideoId == videoId).ToList().Count > 0;
+                    }
+
                     // Check if notification was made within the hour. (if it's just been uploaded the published time is within the hour, unless pubsubhubbub is really slow)
                     var dateToCheck =
                         DateTime.Parse(xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")));
@@ -161,32 +171,43 @@ namespace channelbot_2
                     // TODO enable within the hour check
                     // Get all channels/subreddit combos with the channel
                     // Since there could be many subreddits for one channel
-                    foreach (var channel in db.Channels)
+                    DbSet<Channel> channels;
+                    using (var db = new ModelDbContext())
                     {
-                        if (channel.YoutubeChannelId !=
-                            xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId"))) continue;
+                        channels = db.Channels;
+                    }
 
-                        var yt = new YoutubeNotification
+                    foreach (var channel in channels)
+                    {
+                        YoutubeNotification yt;
+                        using (var db = new ModelDbContext())
                         {
-                            AuthorLink = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "uri")),
-                            AuthorName = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "name")),
-                            YoutubeChannelId =
-                                xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId")),
-                            VideoId = videoId,
-                            Link = descendant.Descendants(atomNs + "link").Attributes("href").ToArray()[0]
-                                .Value,
-                            PublishedDate =
-                                xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")),
-                            Title = xmlDescandantValueGetter(descendant.Descendants(atomNs + "title")),
-                            UpdatedDate = xmlDescandantValueGetter(descendant.Descendants(atomNs + "updated")),
-                            PostedToReddit = false,
-                            Channel = channel
-                        };
+                            if (channel.YoutubeChannelId !=
+                                xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId"))) continue;
 
-                        db.YoutubeNotifications.Add(
-                           yt
-                        );
-                        db.SaveChanges();
+                            yt = new YoutubeNotification
+                            {
+                                AuthorLink = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "uri")),
+                                AuthorName = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "name")),
+                                YoutubeChannelId =
+                                    xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId")),
+                                VideoId = videoId,
+                                Link = descendant.Descendants(atomNs + "link").Attributes("href").ToArray()[0]
+                                    .Value,
+                                PublishedDate =
+                                    xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")),
+                                Title = xmlDescandantValueGetter(descendant.Descendants(atomNs + "title")),
+                                UpdatedDate = xmlDescandantValueGetter(descendant.Descendants(atomNs + "updated")),
+                                PostedToReddit = false,
+                                Channel = channel
+                            };
+
+                            db.YoutubeNotifications.Add(
+                                yt
+                            );
+                            db.SaveChanges();
+                        }
+
                         OnNotificationReceived?.Invoke(this, yt);
                     }
                 }
@@ -318,7 +339,8 @@ namespace channelbot_2
         {
             using (var db = new ModelDbContext())
             {
-                var val = db.PubsubhubbubSubscriptions.FirstOrDefault(x => x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
+                var val = db.PubsubhubbubSubscriptions.FirstOrDefault(x =>
+                    x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
                 if (val == null) return;
                 db.PubsubhubbubSubscriptions.Remove(val);
                 db.SaveChanges();
@@ -350,6 +372,7 @@ namespace channelbot_2
                     db.PubsubhubbubSubscriptions.Update(sub);
                     return;
                 }
+
                 db.PubsubhubbubSubscriptions.Add(
                     obj
                 );
