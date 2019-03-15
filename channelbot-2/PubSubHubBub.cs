@@ -186,9 +186,9 @@ namespace channelbot_2
                         db.YoutubeNotifications.Add(
                            yt
                         );
+                        db.SaveChanges();
                         OnNotificationReceived?.Invoke(this, yt);
                     }
-                    db.SaveChanges();
                 }
             }
         }
