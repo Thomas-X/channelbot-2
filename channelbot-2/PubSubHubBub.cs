@@ -321,6 +321,7 @@ namespace channelbot_2
                 var val = db.PubsubhubbubSubscriptions.FirstOrDefault(x => x.ChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]);
                 if (val == null) return;
                 db.PubsubhubbubSubscriptions.Remove(val);
+                db.SaveChanges();
             }
         }
 
@@ -347,10 +348,12 @@ namespace channelbot_2
                     sub.ChannelId = obj.ChannelId;
                     sub.Subreddit = obj.Subreddit;
                     db.PubsubhubbubSubscriptions.Update(sub);
+                    return;
                 }
                 db.PubsubhubbubSubscriptions.Add(
                     obj
                 );
+                db.SaveChanges();
             }
         }
 
