@@ -38,6 +38,12 @@ namespace channelbot_2
                 );
                 // Get new token and insert into DB
                 db.SaveChanges();
+                // TODO DRY
+                // Set timer for refresh
+                // Start timer 
+                TokenTimer.Interval = DateTime.Now.AddMinutes(60).Millisecond * 0.80;
+                TokenTimer.Elapsed += (source, e) => OnRefreshToken(oldToken);
+                TokenTimer.Start();
             }
         }
 

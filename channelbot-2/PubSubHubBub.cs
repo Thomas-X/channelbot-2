@@ -161,8 +161,8 @@ namespace channelbot_2
                         var withinTheHour = dateToCheck > DateTime.Now.Subtract(new TimeSpan(1, 0, 0)) &&
                                             dateToCheck < DateTime.Now.AddHours(1);
 
-                        if (exists) return;
-                        if (!withinTheHour) return;
+                        if (exists) continue;
+                        if (!withinTheHour) continue;
                         // add it to DB
                         var author = descendant.Descendants(atomNs + "author");
                         var xAuthor = author.ToList();
@@ -172,6 +172,7 @@ namespace channelbot_2
 
                         var channels = db.Channels;
 
+                        var yts = new List<YoutubeNotification>();
 
                         foreach (var channel in channels)
                         {
@@ -198,10 +199,16 @@ namespace channelbot_2
                             db.YoutubeNotifications.Add(
                                 yt
                             );
+                            yts.Add(yt);
+                        }
 
+                        db.SaveChanges();
+
+                        foreach (var yt in yts)
+                        {
+                            // after processing all youtube notifications, call the event (to avoid overlapping MYSQL connections)
                             OnNotificationReceived?.Invoke(this, yt);
                         }
-                        db.SaveChanges();
                     }
                 }
             }
