@@ -101,12 +101,14 @@ namespace channelbot_2
                     PubSubHubBub.ChannelNameNotSupportedMessage(message.Author);
                     return;
                 }
-                var isValid = Api.Subreddit(vals["subreddit"])
-                                  .Moderators
-                                  .Where(x => x.Name == message.Author &&
-                                              x.ModPermissions.FirstOrDefault(y => y == "all") != null)
-                                  .ToList().Count == 1;
-                if (!isValid) return;
+                // TODO uncomment
+                // disable mod check for seeding DB
+//                var isValid = Api.Subreddit(vals["subreddit"])
+//                                  .Moderators
+//                                  .Where(x => x.Name == message.Author &&
+//                                              x.ModPermissions.FirstOrDefault(y => y == "all") != null)
+//                                  .ToList().Count == 1;
+//                if (!isValid) return;
                 var exists = db.Channels.FirstOrDefault(x =>
                                  x.YoutubeChannelId == vals["channel_id"] && x.Subreddit == vals["subreddit"]) != null;
                 if (exists) return;
@@ -160,11 +162,11 @@ namespace channelbot_2
                 {
                     case "add":
                         HandleAddPm(message);
-                        Api.Account.Messages.Compose(message.Author, "success", "successfully added your channel to the bot");
+//                        Api.Account.Messages.Compose(message.Author, "success", "successfully added your channel to the bot");
                         break;
                     case "remove":
                         HandleRemovePm(message);
-                        Api.Account.Messages.Compose(message.Author, "success", "successfully removed your channel from the bot");
+//                        Api.Account.Messages.Compose(message.Author, "success", "successfully removed your channel from the bot");
                         break;
                     case "list":
                         HandleListPm(message);

@@ -41,7 +41,7 @@ namespace channelbot_2
                 // TODO DRY
                 // Set timer for refresh
                 // Start timer 
-                TokenTimer.Interval = DateTime.Now.AddMinutes(60).Millisecond * 0.80;
+                TokenTimer = new Timer {Interval = DateTime.Now.AddMinutes(60).Millisecond * 0.80};
                 TokenTimer.Elapsed += (source, e) => OnRefreshToken(oldToken);
                 TokenTimer.Start();
             }
@@ -97,8 +97,8 @@ namespace channelbot_2
                     // Setup timer for getting new token (in case the program shut down before the token expired, would be a waste not to re-use)
                     var diff = existingTokens[0].ExpirationDate - DateTime.Now;
                     // TODO DRY
-                    TokenTimer.Interval =
-                        diff.TotalMilliseconds * 0.80; // use 80% of the remaining time for good measure
+                    TokenTimer = new Timer {Interval = diff.TotalMilliseconds * 0.80};
+                    // use 80% of the remaining time for good measure
                     TokenTimer.Elapsed += (source, e) => OnRefreshToken(existingTokens[0]);
                     TokenTimer.Start();
                 }
@@ -111,7 +111,10 @@ namespace channelbot_2
                     db.SaveChanges();
 
                     // Start timer 
-                    TokenTimer.Interval = (redditToken.ExpirationDate - DateTime.Now).TotalMilliseconds * 0.80;
+                    TokenTimer = new Timer
+                    {
+                        Interval = (redditToken.ExpirationDate - DateTime.Now).TotalMilliseconds * 0.80
+                    };
                     TokenTimer.Elapsed += (source, e) => OnRefreshToken(redditToken);
                     TokenTimer.Start();
                 }

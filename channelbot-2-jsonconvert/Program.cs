@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using channelbot_2_jsonconvert.DataStructures;
 using Newtonsoft.Json;
+using Reddit;
 
 namespace channelbot_2_jsonconvert
 {
@@ -17,8 +19,18 @@ namespace channelbot_2_jsonconvert
             // TODO Step 2: Send Reddit PMs to bot with add data (limited to 20 for testing reasons)
             // TODO Step 3: Validate bot working
             // TODO HMAC for pubsubhubbub
-//            var bla = JsonConvert.DeserializeObject<List<ChannelJson>>(File.ReadAllText("channels.json"));
+            var channels = JsonConvert.DeserializeObject<List<ChannelJson>>(File.ReadAllText("channels.json"));
             Console.WriteLine("Hello World!");
+            var reddit = new RedditAPI(accessToken: "48589035-8Rj5imtYl9gebgypOIech-6smq8");
+            var i = 0;
+            foreach (var channel in channels)
+            {
+                i++;
+                reddit.Account.Messages.Compose("Dispose_Close", "add", $"channel_id: {channel.channel_id}\nsubreddit: {channel.subreddit}");
+                // Wait 5 sec to not overload bot
+                Thread.Sleep(5000);
+                Console.WriteLine($"processing channel index: {i}");
+            }
         }
     }
 }
