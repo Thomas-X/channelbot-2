@@ -164,7 +164,7 @@ namespace channelbot_2
                     foreach (var channel in db.Channels)
                     {
                         if (channel.YoutubeChannelId !=
-                            xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId"))) return;
+                            xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId"))) continue;
 
                         var yt = new YoutubeNotification
                         {
