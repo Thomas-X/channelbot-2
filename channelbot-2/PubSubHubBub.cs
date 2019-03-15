@@ -151,41 +151,34 @@ namespace channelbot_2
                     // Check if notification of that video already exists (this means it was updated instead of created and
                     // we should ignore it).
                     var videoId = descendant.Descendants(ytNs + "videoId").ToArray()[0].Value;
-                    bool exists;
                     using (var db = new ModelDbContext())
                     {
-                        exists = db.YoutubeNotifications.Where(x => x.VideoId == videoId).ToList().Count > 0;
-                    }
+                        var exists = db.YoutubeNotifications.Where(x => x.VideoId == videoId).ToList().Count > 0;
 
-                    // Check if notification was made within the hour. (if it's just been uploaded the published time is within the hour, unless pubsubhubbub is really slow)
-                    var dateToCheck =
-                        DateTime.Parse(xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")));
-                    var withinTheHour = dateToCheck > DateTime.Now.Subtract(new TimeSpan(1, 0, 0)) &&
-                                        dateToCheck < DateTime.Now.AddHours(1);
+                        // Check if notification was made within the hour. (if it's just been uploaded the published time is within the hour, unless pubsubhubbub is really slow)
+                        var dateToCheck =
+                            DateTime.Parse(xmlDescandantValueGetter(descendant.Descendants(atomNs + "published")));
+                        var withinTheHour = dateToCheck > DateTime.Now.Subtract(new TimeSpan(1, 0, 0)) &&
+                                            dateToCheck < DateTime.Now.AddHours(1);
 
-                    if (exists) return;
-                    if (!withinTheHour) return;
-                    // add it to DB
-                    var author = descendant.Descendants(atomNs + "author");
-                    var xAuthor = author.ToList();
-                    // TODO enable within the hour check
-                    // Get all channels/subreddit combos with the channel
-                    // Since there could be many subreddits for one channel
-                    DbSet<Channel> channels;
-                    using (var db = new ModelDbContext())
-                    {
-                        channels = db.Channels;
-                    }
+                        if (exists) return;
+                        if (!withinTheHour) return;
+                        // add it to DB
+                        var author = descendant.Descendants(atomNs + "author");
+                        var xAuthor = author.ToList();
+                        // TODO enable within the hour check
+                        // Get all channels/subreddit combos with the channel
+                        // Since there could be many subreddits for one channel
 
-                    foreach (var channel in channels)
-                    {
-                        YoutubeNotification yt;
-                        using (var db = new ModelDbContext())
+                        var channels = db.Channels;
+
+
+                        foreach (var channel in channels)
                         {
                             if (channel.YoutubeChannelId !=
                                 xmlDescandantValueGetter(descendant.Descendants(ytNs + "channelId"))) continue;
 
-                            yt = new YoutubeNotification
+                            var yt = new YoutubeNotification
                             {
                                 AuthorLink = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "uri")),
                                 AuthorName = xmlDescandantValueGetter(xAuthor.Descendants(atomNs + "name")),
@@ -205,10 +198,10 @@ namespace channelbot_2
                             db.YoutubeNotifications.Add(
                                 yt
                             );
-                            db.SaveChanges();
-                        }
 
-                        OnNotificationReceived?.Invoke(this, yt);
+                            OnNotificationReceived?.Invoke(this, yt);
+                        }
+                        db.SaveChanges();
                     }
                 }
             }
