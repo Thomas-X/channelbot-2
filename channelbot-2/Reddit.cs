@@ -187,6 +187,11 @@ namespace channelbot_2
         {
             foreach (var message in e.NewMessages)
             {
+                // author can be null ???
+                if (message.Author == null)
+                {
+                    continue;
+                }
                 Console.WriteLine($"incoming message from {message.Author}!");
                 switch (message.Subject)
                 {
