@@ -40,6 +40,7 @@ namespace channelbot_2
                 {
                     yt.PostedToReddit = true;
                     db.YoutubeNotifications.Update(yt);
+                    db.SaveChanges();
                 }
             }
             catch (Exception e)
@@ -187,30 +188,27 @@ namespace channelbot_2
         {
             foreach (var message in e.NewMessages)
             {
-                // author can be null ???
-                if (message.Author == null)
+                if (message.Author != null)
                 {
-                    continue;
-                }
-                Console.WriteLine($"incoming message from {message.Author}!");
-                switch (message.Subject)
-                {
-                    case "add":
-                        HandleAddPm(message);
+                    Console.WriteLine($"incoming message from {message.Author}!");
+                    switch (message.Subject)
+                    {
+                        case "add":
+                            HandleAddPm(message);
 //                        Api.Account.Messages.Compose(message.Author, "success", "successfully added your channel to the bot");
-                        break;
-                    case "remove":
-                        HandleRemovePm(message);
+                            break;
+                        case "remove":
+                            HandleRemovePm(message);
 //                        Api.Account.Messages.Compose(message.Author, "success", "successfully removed your channel from the bot");
-                        break;
-                    case "list":
-                        HandleListPm(message);
-                        break;
-                    default:
-                        Api.Account.Messages.Compose(message.Author, "error", "invalid PM title");
-                        break;
+                            break;
+                        case "list":
+                            HandleListPm(message);
+                            break;
+                        default:
+                            Api.Account.Messages.Compose(message.Author, "error", "invalid PM title");
+                            break;
+                    }
                 }
-
                 // Mark message as "read"
                 Api.Account.Messages.ReadMessage(message.Name);
             }
