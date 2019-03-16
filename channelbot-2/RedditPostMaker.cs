@@ -30,12 +30,12 @@ namespace channelbot_2
             {
                 using (var db = new ModelDbContext())
                 {
-                    foreach (var yt in db.YoutubeNotifications.Where(x => x.PostedToReddit == false))
+                    var yts = db.YoutubeNotifications.Where(x => x.PostedToReddit == false);
+                    foreach (var youtubeNotification in yts)
                     {
-                        reddit.PostInSubreddit(new { }, yt);
-                        // Wait one sec between requests (should be internally managed by Reddit.NET, library says so but we ran into rate limiting issues so here we are)
+                        if (youtubeNotification == null) continue;
+                        reddit.PostInSubreddit(new { }, youtubeNotification);
                         Thread.Sleep(1000);
-//                        Console.WriteLine("Backup reddit posting!");
                     }
                 }
             }

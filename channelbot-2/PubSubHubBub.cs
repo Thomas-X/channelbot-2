@@ -202,13 +202,13 @@ namespace channelbot_2
                             yts.Add(yt);
                         }
 
-                        db.SaveChanges();
 
                         foreach (var yt in yts)
                         {
                             // after processing all youtube notifications, call the event (to avoid overlapping MYSQL connections)
                             OnNotificationReceived?.Invoke(this, yt);
                         }
+                        db.SaveChanges();
                     }
                 }
             }
