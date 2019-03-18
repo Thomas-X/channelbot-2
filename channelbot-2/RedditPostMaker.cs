@@ -26,18 +26,15 @@ namespace channelbot_2
         /// <param name="e"></param>
         public void OnPoll(object source, ElapsedEventArgs e)
         {
-            using (var reddit = new Reddit(Reddit.Api))
+            using (var db = new ModelDbContext())
             {
-                using (var db = new ModelDbContext())
+                var yts = db.YoutubeNotifications.Where(x => x.PostedToReddit == false).ToList();
+                foreach (var youtubeNotification in yts)
                 {
-                    var yts = db.YoutubeNotifications.Where(x => x.PostedToReddit == false).ToList();
-                    foreach (var youtubeNotification in yts)
-                    {
-                        if (youtubeNotification == null) continue;
-                        Console.WriteLine("On poll");
-                        reddit.PostInSubreddit(this, youtubeNotification);
-                        Thread.Sleep(1000);
-                    }
+                    if (youtubeNotification == null) continue;
+                    Console.WriteLine("On poll");
+                    Program.reddit.PostInSubreddit(this, youtubeNotification);
+                    Thread.Sleep(1000);
                 }
             }
         }

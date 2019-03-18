@@ -22,6 +22,7 @@ namespace channelbot_2
     {
         public static ManualResetEvent QuitEvent = new ManualResetEvent(false);
         public static HttpClient HttpClient = new HttpClient();
+        public static Reddit reddit;
 
         private static void Main(string[] args)
         {
@@ -46,6 +47,7 @@ namespace channelbot_2
             var redditAPI = new RedditAPI(accessToken:RedditTokenManager.CurrentToken);
             using (var reddit = new Reddit(redditAPI))
             {
+                Program.reddit = reddit;
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 Console.WriteLine("Initialized reddit logic..");
                 reddit.MonitorUnreadPMs();

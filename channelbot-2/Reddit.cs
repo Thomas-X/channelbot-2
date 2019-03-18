@@ -35,7 +35,7 @@ namespace channelbot_2
                     .LinkPost($"{yt.Title} by {yt.AuthorName}", yt.Link)
                     .Submit(resubmit: true)
                     .Reply(
-                        $"Video published at {yt.PublishedDate} to {yt.Channel.YoutubeNotifications.Count} subreddits.");
+                        $"Video published at {yt.PublishedDate} to {yt.Channel.YoutubeNotifications.Count} subreddit(s).");
                 using (var db = new ModelDbContext())
                 {
                     yt.PostedToReddit = true;
