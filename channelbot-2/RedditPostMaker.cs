@@ -34,7 +34,7 @@ namespace channelbot_2
                     foreach (var youtubeNotification in yts)
                     {
                         if (youtubeNotification == null) continue;
-                        reddit.PostInSubreddit(new { }, youtubeNotification);
+                        reddit.PostInSubreddit(this, youtubeNotification);
                         Thread.Sleep(1000);
                     }
                 }

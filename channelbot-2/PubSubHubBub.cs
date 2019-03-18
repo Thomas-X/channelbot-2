@@ -172,7 +172,7 @@ namespace channelbot_2
 
                         var channels = db.Channels;
 
-                        var yts = new List<YoutubeNotification>();
+                        var youtubeIds = new List<int>();
 
                         foreach (var channel in channels)
                         {
@@ -199,15 +199,18 @@ namespace channelbot_2
                             db.YoutubeNotifications.Add(
                                 yt
                             );
-                            yts.Add(yt);
+                            youtubeIds.Add(yt.Id);
                         }
 
+                        var yts = db.YoutubeNotifications.Where(x => youtubeIds.Contains(x.Id)).ToList();
 
-                        foreach (var yt in yts)
+                        foreach (var youtubeNotification in yts)
                         {
+                            if (youtubeNotification == null) continue;
                             // after processing all youtube notifications, call the event (to avoid overlapping MYSQL connections)
-                            OnNotificationReceived?.Invoke(this, yt);
+                            OnNotificationReceived?.Invoke(this, youtubeNotification);
                         }
+
                         db.SaveChanges();
                     }
                 }
