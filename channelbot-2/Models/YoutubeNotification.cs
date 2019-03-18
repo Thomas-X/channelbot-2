@@ -12,6 +12,7 @@
         public string PublishedDate { get; set; }
         public string UpdatedDate { get; set; }
         public bool PostedToReddit { get; set; }
+        public int ChannelId { get; set; }
         public Channel Channel { get; set; }
     }
 }

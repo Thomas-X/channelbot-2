@@ -32,12 +32,15 @@ namespace channelbot_2
             if (source == null)
             {
                 Console.WriteLine("source is null");
-            } else if (yt == null)
+            }
+            else if (yt == null)
             {
                 Console.WriteLine("yt is null when it really shouldn't be..");
             }
+
             try
             {
+                if (yt == null) return;
                 Api.Subreddit(yt.Channel.Subreddit)
                     .LinkPost($"{yt.Title} by {yt.AuthorName}", yt.Link)
                     .Submit(resubmit: true)
@@ -216,6 +219,7 @@ namespace channelbot_2
                             break;
                     }
                 }
+
                 // Mark message as "read"
                 Api.Account.Messages.ReadMessage(message.Name);
             }

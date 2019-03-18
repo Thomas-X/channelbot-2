@@ -4,6 +4,7 @@ using System.Threading;
 using System.Timers;
 using channelbot_2.Interfaces;
 using channelbot_2.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace channelbot_2
 {
@@ -28,10 +29,13 @@ namespace channelbot_2
         {
             using (var db = new ModelDbContext())
             {
-                var yts = db.YoutubeNotifications.Where(x => x.PostedToReddit == false).ToList();
+                var yts = db.YoutubeNotifications.Where(x => x.PostedToReddit == false)
+                    .ToList();
                 foreach (var youtubeNotification in yts)
                 {
                     if (youtubeNotification == null) continue;
+                    youtubeNotification.Channel =
+                        db.Channels.FirstOrDefault(y => y.Id == youtubeNotification.ChannelId);
                     Console.WriteLine("On poll");
                     Program.reddit.PostInSubreddit(new {}, youtubeNotification);
                     Thread.Sleep(1000);
