@@ -30,10 +30,11 @@ namespace channelbot_2
             {
                 using (var db = new ModelDbContext())
                 {
-                    var yts = db.YoutubeNotifications.Where(x => x.PostedToReddit == false);
+                    var yts = db.YoutubeNotifications.Where(x => x.PostedToReddit == false).ToList();
                     foreach (var youtubeNotification in yts)
                     {
                         if (youtubeNotification == null) continue;
+                        Console.WriteLine("On poll");
                         reddit.PostInSubreddit(this, youtubeNotification);
                         Thread.Sleep(1000);
                     }

@@ -207,6 +207,7 @@ namespace channelbot_2
                         foreach (var youtubeNotification in yts)
                         {
                             if (youtubeNotification == null) continue;
+                            Console.WriteLine("On notification received");
                             // after processing all youtube notifications, call the event (to avoid overlapping MYSQL connections)
                             OnNotificationReceived?.Invoke(this, youtubeNotification);
                         }
