@@ -80,7 +80,7 @@ namespace channelbot_2
         public static void ChannelNameNotSupportedMessage(string author)
         {
             Reddit.Api.Account.Messages.Compose(author, $"error adding your channel",
-                "I'm sorry, but I couldn't parse the message. Did you use the channel field? If so, that's not supported anymore, use the channel_id field instead.");
+                "I'm sorry, but I couldn't parse the message. See the wiki for more info on how to use me. https://reddit.com/r/channelbot/wiki/api");
         }
 
         /// <summary>

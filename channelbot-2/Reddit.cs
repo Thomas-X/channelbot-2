@@ -29,6 +29,13 @@ namespace channelbot_2
 
         public void PostInSubreddit(object source, YoutubeNotification yt)
         {
+            if (source == null)
+            {
+                Console.WriteLine("source is null");
+            } else if (yt == null)
+            {
+                Console.WriteLine("yt is null when it really shouldn't be..");
+            }
             try
             {
                 Api.Subreddit(yt.Channel.Subreddit)
