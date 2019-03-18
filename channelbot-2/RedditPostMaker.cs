@@ -11,7 +11,7 @@ namespace channelbot_2
     public class RedditPostMaker : IPoller
     {
         // Post messages every 2m, check for it (incase the reddit request failed from the events)
-        public int PollInterval { get; set; } = 20000; // 120000
+        public int PollInterval { get; set; } = 120000; // 120000
 
         /// <summary>
         /// On setup
@@ -36,7 +36,6 @@ namespace channelbot_2
                     if (youtubeNotification == null) continue;
                     youtubeNotification.Channel =
                         db.Channels.FirstOrDefault(y => y.Id == youtubeNotification.ChannelId);
-                    Console.WriteLine("On poll");
                     Program.reddit.PostInSubreddit(new {}, youtubeNotification);
                     Thread.Sleep(1000);
                 }
