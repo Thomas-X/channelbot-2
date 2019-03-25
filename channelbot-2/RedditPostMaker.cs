@@ -10,8 +10,8 @@ namespace channelbot_2
 {
     public class RedditPostMaker : IPoller
     {
-        // Post messages every 2m, check for it (incase the reddit request failed from the events)
-        public int PollInterval { get; set; } = 120000; // 120000
+        // Post messages every 30m, check for it (incase the reddit request failed from the events)
+        public int PollInterval { get; set; } = 1800000 ; // 120000
 
         /// <summary>
         /// On setup
@@ -21,7 +21,7 @@ namespace channelbot_2
         }
 
         /// <summary>
-        /// On poll, currently every 2m
+        /// On poll, currently every 30m
         /// </summary>
         /// <param name="source"></param>
         /// <param name="e"></param>

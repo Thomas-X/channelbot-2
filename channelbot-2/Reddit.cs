@@ -14,7 +14,19 @@ namespace channelbot_2
 {
     public class Reddit : IDisposable
     {
-        public static RedditAPI Api;
+        private static RedditAPI _api;
+        public static RedditAPI Api
+        {
+            get => _api;
+            set
+            {
+                lock (ApiLock)
+                {
+                    _api = value;
+                }
+            }
+        }
+        public static readonly object ApiLock = new object();
         public static event EventHandler<Message> OnAdd;
         public static event EventHandler<Message> OnRemove;
         public static string[] RequiredKeysListPm = {"subreddit"};

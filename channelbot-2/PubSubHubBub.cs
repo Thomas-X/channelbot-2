@@ -238,9 +238,11 @@ namespace channelbot_2
                 return;
             }
 
+            // Synchronously accept requests since pubsubhubbub likes sending use notifications twice for the same video..
+            // Could possibly give some timed out requests
+            HandleRequest(client);
+            //  Accept new incoming requests after handling all of the last request.
             listener.BeginAcceptTcpClient(OnConnected, listener);
-            // Handle request/response logic in new thread 
-            Task.Factory.StartNew(() => { HandleRequest(client); });
         }
 
         /// <summary>
@@ -261,7 +263,6 @@ namespace channelbot_2
         /// <param name="query"></param>
         private void OnSubscribeVerification(NetworkStream stream, NameValueCollection query)
         {
-            // TODO add challenge to db?
             var str =
                 $"HTTP/1.1 200 OK\r\nAccept-Ranges:bytes\r\nContent-Length:{query["hub.challenge"].Length}\r\n\r\n{query["hub.challenge"]}";
             HandleVerification(stream, str);

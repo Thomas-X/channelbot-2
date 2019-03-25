@@ -23,6 +23,8 @@ namespace channelbot_2
                 var pollerInstance = (IPoller) Activator.CreateInstance(poller);
                 var timer = new Timer {Interval = pollerInstance.PollInterval};
                 timer.Elapsed += pollerInstance.OnPoll;
+                // Call poll once on bootup
+                pollerInstance.OnPoll(new {}, null);
                 pollerInstance.OnSetup();
                 timers.Add(timer);
             }
