@@ -87,7 +87,7 @@ namespace channelbot_2
                 foreach (var val in vals)
                 {
                     var splitted = val.Split(":");
-                    KeyValuePair<string, string> keyValue = new KeyValuePair<string, string>(splitted[0], splitted[1]);
+                    KeyValuePair<string, string> keyValue = new KeyValuePair<string, string>(splitted[0].ToLower(), splitted[1]);
 
                     // so if we converted the channel field to channel_id.. realllllyyyyy uglyy
                     if (skipIter && dict.ContainsKey("channel_id") && keyValue.Key == "channel")
@@ -114,7 +114,7 @@ namespace channelbot_2
                     else
                     {
                         Console.WriteLine("Gotten an invalid msg");
-                        // continue;
+                        return null;
                     }
                 }
 
