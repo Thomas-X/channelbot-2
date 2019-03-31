@@ -21,12 +21,13 @@ namespace channelbot_2_jsonconvert
             // TODO HMAC for pubsubhubbub
             var channels = JsonConvert.DeserializeObject<List<ChannelJson>>(File.ReadAllText("channels.json"));
             Console.WriteLine("Hello World!");
-            var reddit = new RedditAPI(accessToken: "ACCESS_TOKEN_HERE");
-            var i = 0;
+            var reddit = new RedditAPI(accessToken: "48589035-UwOdWWQh4Tg8VZCkPIx0zMwqEOU");
+            var i = 116;
             foreach (var channel in channels)
             {
+                // 116
                 i++;
-                reddit.Account.Messages.Compose("Dispose_Close", "add", $"channel_id: {channel.channel_id}\nsubreddit: {channel.subreddit}");
+                reddit.Account.Messages.Compose("channelbot", "add", $"channel_id: {channel.channel_id}\nsubreddit: {channel.subreddit}");
                 // Wait 5 sec to not overload bot
                 Thread.Sleep(5000);
                 Console.WriteLine($"processing channel index: {i}");

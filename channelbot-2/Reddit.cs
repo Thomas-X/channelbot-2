@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Web;
 using channelbot_2.DataStructures;
 using channelbot_2.Models;
@@ -243,14 +244,16 @@ namespace channelbot_2
 
                 // Mark message as "read"
                 Api.Account.Messages.ReadMessage(message.Name);
+                // wait 5 sec between reading messages because reddit API likes throttling like there is no tomorrow.
+                Thread.Sleep(5000);
             }
         }
 
         public void MonitorUnreadPMs()
         {
             Api.Account.Messages.UnreadUpdated += OnUnreadPm;
-            // monitor pms every 30s
-            Api.Account.Messages.MonitorUnread(30000);
+            // monitor pms every 120s
+            Api.Account.Messages.MonitorUnread(120000);
         }
 
         public void Dispose()
