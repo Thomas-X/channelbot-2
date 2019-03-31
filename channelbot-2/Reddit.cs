@@ -79,44 +79,53 @@ namespace channelbot_2
         /// <returns></returns>
         public static Dictionary<string, string> GetMessageValues(string body, string[] requiredKeys)
         {
-            var dict = new Dictionary<string, string>();
-            var vals = body.Split("\n");
-            var skipIter = false;
-            foreach (var val in vals)
+            try
             {
-                var splitted = val.Split(":");
-                KeyValuePair<string, string> keyValue = new KeyValuePair<string, string>(splitted[0], splitted[1]);
+                var dict = new Dictionary<string, string>();
+                var vals = body.Split("\n");
+                var skipIter = false;
+                foreach (var val in vals)
+                {
+                    var splitted = val.Split(":");
+                    KeyValuePair<string, string> keyValue = new KeyValuePair<string, string>(splitted[0], splitted[1]);
 
-                // so if we converted the channel field to channel_id.. realllllyyyyy uglyy
-                if (skipIter && dict["channel_id"] != null && keyValue.Key == "channel")
-                {
-                    continue;
+                    // so if we converted the channel field to channel_id.. realllllyyyyy uglyy
+                    if (skipIter && dict.ContainsKey("channel_id") && keyValue.Key == "channel")
+                    {
+                        continue;
+                    }
+
+                    if (keyValue.Key == "channel" && keyValue.Value.Length > 0)
+                    {
+                        Console.WriteLine("Converting channel to channel_id..");
+                        var res = JsonConvert.DeserializeObject<YoutubChannelNameLookUpResponse>(
+                            Program.HttpClient.GetStringAsync(
+                                    $"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=channel&q={HttpUtility.UrlEncode(keyValue.Value.Trim())}&key={Environment.GetEnvironmentVariable("YOUTUBE_API_KEY")}")
+                                .GetAwaiter().GetResult());
+                        if (res.Items.Count <= 0) continue;
+                        dict["channel_id"] = res.Items[0].Id.ChannelId;
+                        skipIter = true;
+                    }
+                    else if (requiredKeys.Any(keyValue.Key.Contains) && keyValue.Value.Length > 0)
+                    {
+                        dict[requiredKeys.First(x => x == keyValue.Key).Trim()] = keyValue.Value.Trim();
+                    }
+                    // If anything of the request is invalid, ignore it and read as marked
+                    else
+                    {
+                        Console.WriteLine("Gotten an invalid msg");
+                        // continue;
+                    }
                 }
 
-                if (keyValue.Key == "channel" && keyValue.Value.Length > 0)
-                {
-                    Console.WriteLine("Converting channel to channel_id..");
-                    var res = JsonConvert.DeserializeObject<YoutubChannelNameLookUpResponse>(
-                        Program.HttpClient.GetStringAsync(
-                                $"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&type=channel&q={HttpUtility.UrlEncode(keyValue.Value.Trim())}&key={Environment.GetEnvironmentVariable("YOUTUBE_API_KEY")}")
-                            .GetAwaiter().GetResult());
-                    if (res.Items.Count <= 0) continue;
-                    dict["channel_id"] = res.Items[0].Id.ChannelId;
-                    skipIter = true;
-                }
-                else if (requiredKeys.Any(keyValue.Key.Contains) && keyValue.Value.Length > 0)
-                {
-                    dict[requiredKeys.First(x => x == keyValue.Key).Trim()] = keyValue.Value.Trim();
-                }
-                // If anything of the request is invalid, ignore it and read as marked
-                else
-                {
-                    Console.WriteLine("Gotten an invalid msg");
-                    // continue;
-                }
+
+                return dict;
             }
-
-            return dict;
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return null;
+            }
         }
 
         public void HandleListPm(Message message)
